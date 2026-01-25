@@ -29,16 +29,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          list_json=$(npx wrangler kv:namespace list --format json)
+          list_json=$(npx wrangler kv namespace list --format json)
 
           prod_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PROD" '.[] | select(.title==$name) | .id' | head -n1)
           if [ -z "$prod_id" ]; then
-            prod_id=$(npx wrangler kv:namespace create "$KV_NAMESPACE_NAME_PROD" --format json | jq -r '.id')
+            prod_id=$(npx wrangler kv namespace create "$KV_NAMESPACE_NAME_PROD" --format json | jq -r '.id')
           fi
 
           preview_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PREVIEW" '.[] | select(.title==$name) | .id' | head -n1)
           if [ -z "$preview_id" ]; then
-            preview_id=$(npx wrangler kv:namespace create "$KV_NAMESPACE_NAME_PREVIEW" --format json | jq -r '.id')
+            preview_id=$(npx wrangler kv namespace create "$KV_NAMESPACE_NAME_PREVIEW" --format json | jq -r '.id')
           fi
 
           export KV_PROD_ID="$prod_id"
