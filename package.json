@@ -6,10 +6,13 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
     "deploy": "wrangler deploy",
     "lint": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:dmit": "vitest run dmit.test.ts"
   },
   "dependencies": {
     "hono": "^4.6.5"

@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { DmitProvider } from "./providers/dmit.js";
+import type { MonitorTarget } from "./models/types.js";
 
 /**
  * Cloudflare Workers 环境变量类型
@@ -63,6 +65,73 @@ app.get("/", (c) => {
     version: "0.1.0",
     timestamp: new Date().toISOString(),
   });
+});
+
+/**
+ * 测试 Dmit 库存检查（无需 API Key）
+ * 用于验证在 Workers 环境中是否能绕过 Cloudflare 保护
+ *
+ * 使用方法:
+ * GET /test-dmit?url=https://www.dmit.io/cart.php?gid=1
+ */
+app.get("/test-dmit", async (c) => {
+  const dmitUrl = c.req.query("url");
+
+  if (!dmitUrl) {
+    return c.json(
+      {
+        success: false,
+        error: "Missing 'url' parameter",
+        usage: "/test-dmit?url=https://www.dmit.io/cart.php?gid=1",
+      },
+      400
+    );
+  }
+
+  try {
+    const provider = new DmitProvider();
+    const target: MonitorTarget = {
+      id: "test",
+      provider: "dmit",
+      url: dmitUrl,
+      enabled: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 检查是否支持
+    if (!provider.supports(target)) {
+      return c.json(
+        {
+          success: false,
+          error: "URL is not a valid Dmit URL",
+          url: dmitUrl,
+        },
+        400
+      );
+    }
+
+    const startTime = Date.now();
+    const status = await provider.fetchStatus(target);
+    const duration = Date.now() - startTime;
+
+    return c.json({
+      success: true,
+      duration: `${duration}ms`,
+      url: dmitUrl,
+      provider: provider.name,
+      status,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+        url: dmitUrl,
+      },
+      500
+    );
+  }
 });
 
 /**
