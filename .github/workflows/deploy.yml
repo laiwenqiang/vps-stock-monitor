@@ -20,8 +20,45 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Ensure KV namespaces
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_NAME_PROD: vps-stock-monitor-prod
+          KV_NAMESPACE_NAME_PREVIEW: vps-stock-monitor-preview
+        run: |
+          set -euo pipefail
+
+          list_json=$(npx wrangler kv:namespace list --format json)
+
+          prod_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PROD" '.[] | select(.title==$name) | .id' | head -n1)
+          if [ -z "$prod_id" ]; then
+            prod_id=$(npx wrangler kv:namespace create "$KV_NAMESPACE_NAME_PROD" --format json | jq -r '.id')
+          fi
+
+          preview_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PREVIEW" '.[] | select(.title==$name) | .id' | head -n1)
+          if [ -z "$preview_id" ]; then
+            preview_id=$(npx wrangler kv:namespace create "$KV_NAMESPACE_NAME_PREVIEW" --format json | jq -r '.id')
+          fi
+
+          export KV_PROD_ID="$prod_id"
+          export KV_PREVIEW_ID="$preview_id"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          prod_id = os.environ["KV_PROD_ID"].strip()
+          preview_id = os.environ["KV_PREVIEW_ID"].strip()
+
+          path = Path("wrangler.toml")
+          content = path.read_text()
+          content = content.replace("replace-with-your-kv-namespace-id", prod_id)
+          content = content.replace("replace-with-your-preview-kv-namespace-id", preview_id)
+          Path("wrangler.ci.toml").write_text(content)
+          PY
+        shell: bash
       - name: Deploy to Cloudflare Workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npm run deploy
+        run: npx wrangler deploy --config wrangler.ci.toml
