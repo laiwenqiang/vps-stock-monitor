@@ -1,0 +1,19 @@
+name = "vps-stock-monitor"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Environment variables (use .dev.vars for local development)
+[vars]
+# API_KEY = "your-secret-api-key"
+# TELEGRAM_BOT_TOKEN = "your-telegram-bot-token"
+# TELEGRAM_CHAT_ID = "your-telegram-chat-id"
+
+# KV namespace binding
+[[kv_namespaces]]
+binding = "KV"
+id = "replace-with-your-kv-namespace-id"
+preview_id = "replace-with-your-preview-kv-namespace-id"
+
+# Cron triggers (every 5 minutes)
+[triggers]
+crons = ["*/5 * * * *"]
