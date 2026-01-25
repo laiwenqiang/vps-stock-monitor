@@ -29,16 +29,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          list_json=$(npx wrangler kv namespace list --json)
+          api_base="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces"
+          list_json=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$api_base")
 
-          prod_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PROD" '.[] | select(.title==$name) | .id' | head -n1)
+          prod_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PROD" '.result[] | select(.title==$name) | .id' | head -n1)
           if [ -z "$prod_id" ]; then
-            prod_id=$(npx wrangler kv namespace create "$KV_NAMESPACE_NAME_PROD" --json | jq -r '.id')
+            prod_id=$(curl -sS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$api_base" --data "{\"title\":\"$KV_NAMESPACE_NAME_PROD\"}" | jq -r '.result.id')
           fi
 
-          preview_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PREVIEW" '.[] | select(.title==$name) | .id' | head -n1)
+          preview_id=$(echo "$list_json" | jq -r --arg name "$KV_NAMESPACE_NAME_PREVIEW" '.result[] | select(.title==$name) | .id' | head -n1)
           if [ -z "$preview_id" ]; then
-            preview_id=$(npx wrangler kv namespace create "$KV_NAMESPACE_NAME_PREVIEW" --json | jq -r '.id')
+            preview_id=$(curl -sS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$api_base" --data "{\"title\":\"$KV_NAMESPACE_NAME_PREVIEW\"}" | jq -r '.result.id')
           fi
 
           export KV_PROD_ID="$prod_id"
