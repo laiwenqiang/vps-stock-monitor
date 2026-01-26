@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { DmitProvider } from "./providers/dmit.js";
-import type { MonitorTarget } from "./models/types.js";
+import type { MonitorTarget, MonitorTargetInput, MonitorTargetPatch } from "./models/types.js";
+import { MonitorService } from "./services/monitor.js";
+import { NotificationManager } from "./services/notification.js";
 
 /**
  * Cloudflare Workers 环境变量类型
@@ -135,51 +137,330 @@ app.get("/test-dmit", async (c) => {
 });
 
 /**
- * API 路由占位
- * TODO: 实现具体的 API 路由
+ * API 路由：获取所有监控目标
  */
-app.get("/api/targets", (c) => {
-  return c.json(
-    {
-      success: false,
-      error: "Not implemented yet",
-      code: 501,
-    },
-    501
-  );
+app.get("/api/targets", async (c) => {
+  try {
+    const service = new MonitorService(c.env);
+    const targets = await service.getTargetStore().list();
+
+    return c.json({
+      success: true,
+      data: targets,
+      count: targets.length,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
 });
 
-app.post("/api/targets", (c) => {
-  return c.json(
-    {
-      success: false,
-      error: "Not implemented yet",
-      code: 501,
-    },
-    501
-  );
+/**
+ * API 路由：创建监控目标
+ */
+app.post("/api/targets", async (c) => {
+  try {
+    const input = await c.req.json<MonitorTargetInput>();
+
+    // 验证必填字段
+    if (!input.provider || !input.url) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing required fields: provider, url",
+        },
+        400
+      );
+    }
+
+    const service = new MonitorService(c.env);
+    const target = await service.getTargetStore().create(input);
+
+    return c.json(
+      {
+        success: true,
+        data: target,
+      },
+      201
+    );
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
 });
 
-app.get("/api/status", (c) => {
-  return c.json(
-    {
-      success: false,
-      error: "Not implemented yet",
-      code: 501,
-    },
-    501
-  );
+/**
+ * API 路由：获取单个监控目标
+ */
+app.get("/api/targets/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const service = new MonitorService(c.env);
+    const target = await service.getTargetStore().get(id);
+
+    if (!target) {
+      return c.json(
+        {
+          success: false,
+          error: "Target not found",
+        },
+        404
+      );
+    }
+
+    return c.json({
+      success: true,
+      data: target,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
 });
 
-app.post("/api/check", (c) => {
-  return c.json(
-    {
-      success: false,
-      error: "Not implemented yet",
-      code: 501,
-    },
-    501
-  );
+/**
+ * API 路由：更新监控目标
+ */
+app.patch("/api/targets/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const patch = await c.req.json<MonitorTargetPatch>();
+
+    const service = new MonitorService(c.env);
+    const target = await service.getTargetStore().update(id, patch);
+
+    return c.json({
+      success: true,
+      data: target,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * API 路由：删除监控目标
+ */
+app.delete("/api/targets/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const service = new MonitorService(c.env);
+    await service.getTargetStore().delete(id);
+
+    return c.json({
+      success: true,
+      message: "Target deleted",
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * API 路由：获取所有监控状态
+ */
+app.get("/api/status", async (c) => {
+  try {
+    const service = new MonitorService(c.env);
+    const targets = await service.getTargetStore().list();
+    const states = await service.getStateStore().listAll();
+
+    const data = targets.map((target) => ({
+      target,
+      state: states[target.id] || null,
+    }));
+
+    return c.json({
+      success: true,
+      data,
+      count: data.length,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * API 路由：获取单个目标的状态
+ */
+app.get("/api/status/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const service = new MonitorService(c.env);
+
+    const target = await service.getTargetStore().get(id);
+    if (!target) {
+      return c.json(
+        {
+          success: false,
+          error: "Target not found",
+        },
+        404
+      );
+    }
+
+    const state = await service.getStateStore().get(id);
+
+    return c.json({
+      success: true,
+      data: {
+        target,
+        state,
+      },
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * API 路由：手动检查所有目标
+ */
+app.post("/api/check", async (c) => {
+  try {
+    const service = new MonitorService(c.env);
+    const notificationManager = new NotificationManager(c.env);
+
+    const result = await service.checkAllTargets();
+
+    // 检查是否需要发送通知
+    for (const item of result.results) {
+      if (item.success && item.status) {
+        const target = await service.getTargetStore().get(item.targetId);
+        if (target) {
+          const { shouldNotify, reason } = await service.shouldNotify(
+            target,
+            item.status
+          );
+
+          if (shouldNotify && reason) {
+            await notificationManager.notify(target, item.status, reason);
+            // 更新最后通知时间
+            await service.getStateStore().update(item.targetId, {
+              lastNotifiedAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * API 路由：手动检查单个目标
+ */
+app.post("/api/check/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const service = new MonitorService(c.env);
+    const notificationManager = new NotificationManager(c.env);
+
+    const target = await service.getTargetStore().get(id);
+    if (!target) {
+      return c.json(
+        {
+          success: false,
+          error: "Target not found",
+        },
+        404
+      );
+    }
+
+    const startTime = Date.now();
+    const status = await service.checkTarget(target);
+    const duration = Date.now() - startTime;
+
+    await service.getStateStore().recordSuccess(id, status);
+
+    // 检查是否需要发送通知
+    const { shouldNotify, reason } = await service.shouldNotify(
+      target,
+      status
+    );
+
+    let notified = false;
+    if (shouldNotify && reason) {
+      await notificationManager.notify(target, status, reason);
+      await service.getStateStore().update(id, {
+        lastNotifiedAt: new Date().toISOString(),
+      });
+      notified = true;
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        status,
+        duration: `${duration}ms`,
+        notified,
+        notifyReason: reason,
+      },
+    });
+  } catch (error) {
+    const id = c.req.param("id");
+    const service = new MonitorService(c.env);
+    await service.getStateStore().recordError(id, (error as Error).message);
+
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
 });
 
 /**
@@ -213,13 +494,59 @@ app.onError((err, c) => {
 
 /**
  * Cron Trigger 处理
- * TODO: 实现定时监控逻辑
+ * 定时检查所有启用的监控目标
  */
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    console.log("Cron triggered at:", new Date(event.scheduledTime).toISOString());
-    // TODO: 调用监控服务检查所有目标
-    // await checkAllTargets(env);
+    console.log(
+      "Cron triggered at:",
+      new Date(event.scheduledTime).toISOString()
+    );
+
+    try {
+      const service = new MonitorService(env);
+      const notificationManager = new NotificationManager(env);
+
+      // 检查所有启用的目标
+      const result = await service.checkAllTargets();
+
+      console.log(
+        `Checked ${result.success + result.failed} targets: ${result.success} success, ${result.failed} failed`
+      );
+
+      // 处理通知
+      for (const item of result.results) {
+        if (item.success && item.status) {
+          const target = await service.getTargetStore().get(item.targetId);
+          if (target) {
+            const { shouldNotify, reason } = await service.shouldNotify(
+              target,
+              item.status
+            );
+
+            if (shouldNotify && reason) {
+              console.log(
+                `Sending notification for target ${item.targetId}: ${reason}`
+              );
+              await notificationManager.notify(target, item.status, reason);
+
+              // 更新最后通知时间
+              await service.getStateStore().update(item.targetId, {
+                lastNotifiedAt: new Date().toISOString(),
+              });
+            }
+          }
+        } else if (!item.success) {
+          console.error(
+            `Failed to check target ${item.targetId}: ${item.error}`
+          );
+        }
+      }
+
+      console.log("Cron job completed successfully");
+    } catch (error) {
+      console.error("Cron job failed:", error);
+    }
   },
 };
