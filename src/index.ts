@@ -3,6 +3,8 @@ import { DmitProvider } from "./providers/dmit.js";
 import type { MonitorTarget, MonitorTargetInput, MonitorTargetPatch } from "./models/types.js";
 import { MonitorService } from "./services/monitor.js";
 import { NotificationManager } from "./services/notification.js";
+import { HistoryStore } from "./services/storage.js";
+import { createUIRoutes } from "./routes/ui.js";
 
 /**
  * Cloudflare Workers 环境变量类型
@@ -25,8 +27,14 @@ const app = new Hono<{ Bindings: Env }>();
 
 /**
  * API 密钥验证中间件
+ * GET 请求（查看）无需认证，POST/PATCH/DELETE（写操作）需要认证
  */
 app.use("/api/*", async (c, next) => {
+  // GET 请求无需认证
+  if (c.req.method === "GET") {
+    return next();
+  }
+
   const apiKey = c.env.API_KEY;
 
   // 如果未配置 API_KEY，返回 503（服务不可用）
@@ -406,6 +414,7 @@ app.post("/api/check/:id", async (c) => {
     const id = c.req.param("id");
     const service = new MonitorService(c.env);
     const notificationManager = new NotificationManager(c.env);
+    const historyStore = new HistoryStore(c.env.KV);
 
     const target = await service.getTargetStore().get(id);
     if (!target) {
@@ -424,6 +433,9 @@ app.post("/api/check/:id", async (c) => {
 
     await service.getStateStore().recordSuccess(id, status);
 
+    // 记录检查历史
+    await historyStore.recordCheck(id, status, undefined, duration);
+
     // 检查是否需要发送通知
     const { shouldNotify, reason } = await service.shouldNotify(
       target,
@@ -436,6 +448,8 @@ app.post("/api/check/:id", async (c) => {
       await service.getStateStore().update(id, {
         lastNotifiedAt: new Date().toISOString(),
       });
+      // 记录通知历史
+      await historyStore.recordNotify(id, reason, `${target.name || target.url} - ${status.inStock ? '有货' : '无货'}`);
       notified = true;
     }
 
@@ -451,7 +465,11 @@ app.post("/api/check/:id", async (c) => {
   } catch (error) {
     const id = c.req.param("id");
     const service = new MonitorService(c.env);
+    const historyStore = new HistoryStore(c.env.KV);
+
     await service.getStateStore().recordError(id, (error as Error).message);
+    // 记录错误历史
+    await historyStore.recordCheck(id, undefined, (error as Error).message);
 
     return c.json(
       {
@@ -462,6 +480,82 @@ app.post("/api/check/:id", async (c) => {
     );
   }
 });
+
+/**
+ * API 路由：获取历史记录
+ */
+app.get("/api/history", async (c) => {
+  try {
+    const type = c.req.query("type") || "check";
+    const time = c.req.query("time") || "24h";
+    const targetId = c.req.query("targetId");
+    const page = parseInt(c.req.query("page") || "1", 10);
+    const limit = parseInt(c.req.query("limit") || "20", 10);
+
+    // 计算时间范围
+    let since: Date | undefined;
+    const now = new Date();
+    switch (time) {
+      case "1h":
+        since = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case "24h":
+        since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "7d":
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30d":
+        since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+    }
+
+    const historyStore = new HistoryStore(c.env.KV);
+
+    if (type === "notify") {
+      const result = await historyStore.listNotifyHistory({
+        targetId: targetId || undefined,
+        since,
+        limit,
+      });
+
+      return c.json({
+        success: true,
+        data: result.data,
+        total: result.total,
+        page,
+        limit,
+      });
+    } else {
+      const result = await historyStore.listCheckHistory({
+        targetId: targetId || undefined,
+        since,
+        limit,
+      });
+
+      return c.json({
+        success: true,
+        data: result.data,
+        total: result.total,
+        page,
+        limit,
+      });
+    }
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      500
+    );
+  }
+});
+
+/**
+ * 挂载 UI 路由
+ */
+app.route("/admin", createUIRoutes());
 
 /**
  * 404 处理

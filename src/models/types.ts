@@ -8,6 +8,8 @@ export type MonitorTarget = {
   provider: string;
   /** 监控的 URL */
   url: string;
+  /** 名称（可选，用于显示） */
+  name?: string;
   /** 地区（如 "us-west"） */
   region?: string;
   /** 套餐名称（如 "premium"） */

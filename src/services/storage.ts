@@ -14,6 +14,8 @@ const KV_PREFIX = {
   TARGET: "target:",
   STATE: "state:",
   CONFIG: "config:",
+  HISTORY_CHECK: "history:check:",
+  HISTORY_NOTIFY: "history:notify:",
 } as const;
 
 /**
@@ -194,5 +196,192 @@ export class StateStore {
     }
 
     return states;
+  }
+}
+
+/**
+ * 检查历史记录
+ */
+export type CheckHistoryRecord = {
+  id: string;
+  targetId: string;
+  timestamp: string;
+  status?: StockStatus;
+  error?: string;
+  duration?: number;
+};
+
+/**
+ * 通知历史记录
+ */
+export type NotifyHistoryRecord = {
+  id: string;
+  targetId: string;
+  timestamp: string;
+  reason: string;
+  message?: string;
+};
+
+/**
+ * 历史记录存储服务
+ */
+export class HistoryStore {
+  constructor(private kv: KVNamespace) {}
+
+  /**
+   * 生成唯一 ID（基于时间戳，便于排序）
+   */
+  private generateId(): string {
+    // 使用反向时间戳，使得最新的记录排在前面
+    const reverseTimestamp = (9999999999999 - Date.now()).toString().padStart(13, '0');
+    return `${reverseTimestamp}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  /**
+   * 记录检查历史
+   */
+  async recordCheck(
+    targetId: string,
+    status?: StockStatus,
+    error?: string,
+    duration?: number
+  ): Promise<void> {
+    const id = this.generateId();
+    const record: CheckHistoryRecord = {
+      id,
+      targetId,
+      timestamp: new Date().toISOString(),
+      status,
+      error,
+      duration,
+    };
+
+    const key = `${KV_PREFIX.HISTORY_CHECK}${id}`;
+    // 设置 30 天过期
+    await this.kv.put(key, JSON.stringify(record), {
+      expirationTtl: 30 * 24 * 60 * 60,
+    });
+  }
+
+  /**
+   * 记录通知历史
+   */
+  async recordNotify(
+    targetId: string,
+    reason: string,
+    message?: string
+  ): Promise<void> {
+    const id = this.generateId();
+    const record: NotifyHistoryRecord = {
+      id,
+      targetId,
+      timestamp: new Date().toISOString(),
+      reason,
+      message,
+    };
+
+    const key = `${KV_PREFIX.HISTORY_NOTIFY}${id}`;
+    // 设置 30 天过期
+    await this.kv.put(key, JSON.stringify(record), {
+      expirationTtl: 30 * 24 * 60 * 60,
+    });
+  }
+
+  /**
+   * 获取检查历史
+   */
+  async listCheckHistory(options: {
+    targetId?: string;
+    since?: Date;
+    limit?: number;
+    cursor?: string;
+  } = {}): Promise<{ data: CheckHistoryRecord[]; cursor?: string; total: number }> {
+    const { targetId, since, limit = 50, cursor } = options;
+
+    const list = await this.kv.list({
+      prefix: KV_PREFIX.HISTORY_CHECK,
+      limit: limit + 1, // 多取一个用于判断是否有下一页
+      cursor,
+    });
+
+    const records: CheckHistoryRecord[] = [];
+    let total = 0;
+
+    for (const key of list.keys) {
+      const value = await this.kv.get(key.name, "json");
+      if (value) {
+        const record = value as CheckHistoryRecord;
+
+        // 筛选目标
+        if (targetId && record.targetId !== targetId) {
+          continue;
+        }
+
+        // 筛选时间
+        if (since && new Date(record.timestamp) < since) {
+          continue;
+        }
+
+        if (records.length < limit) {
+          records.push(record);
+        }
+        total++;
+      }
+    }
+
+    return {
+      data: records,
+      cursor: list.list_complete ? undefined : list.cursor,
+      total,
+    };
+  }
+
+  /**
+   * 获取通知历史
+   */
+  async listNotifyHistory(options: {
+    targetId?: string;
+    since?: Date;
+    limit?: number;
+    cursor?: string;
+  } = {}): Promise<{ data: NotifyHistoryRecord[]; cursor?: string; total: number }> {
+    const { targetId, since, limit = 50, cursor } = options;
+
+    const list = await this.kv.list({
+      prefix: KV_PREFIX.HISTORY_NOTIFY,
+      limit: limit + 1,
+      cursor,
+    });
+
+    const records: NotifyHistoryRecord[] = [];
+    let total = 0;
+
+    for (const key of list.keys) {
+      const value = await this.kv.get(key.name, "json");
+      if (value) {
+        const record = value as NotifyHistoryRecord;
+
+        // 筛选目标
+        if (targetId && record.targetId !== targetId) {
+          continue;
+        }
+
+        // 筛选时间
+        if (since && new Date(record.timestamp) < since) {
+          continue;
+        }
+
+        if (records.length < limit) {
+          records.push(record);
+        }
+        total++;
+      }
+    }
+
+    return {
+      data: records,
+      cursor: list.list_complete ? undefined : list.cursor,
+      total,
+    };
   }
 }
