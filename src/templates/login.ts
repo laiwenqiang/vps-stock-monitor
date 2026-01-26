@@ -54,7 +54,7 @@ export function renderLoginPage(): string {
           headers: { 'X-API-Key': apiKey }
         }).then(res => {
           if (res.ok) {
-            window.location.href = '/admin';
+            window.location.href = '/';
           }
         });
       }
@@ -95,7 +95,7 @@ export function renderLoginPage(): string {
           }
 
           // 跳转到 Dashboard
-          window.location.href = '/admin';
+          window.location.href = '/';
         } else {
           const result = await response.json();
           throw new Error(result.error || 'API Key 无效');

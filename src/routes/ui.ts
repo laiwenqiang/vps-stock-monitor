@@ -1,6 +1,6 @@
 /**
  * UI 路由处理
- * 处理所有 /admin/* 路由
+ * 处理所有页面路由
  */
 
 import { Hono } from 'hono';

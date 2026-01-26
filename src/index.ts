@@ -68,7 +68,7 @@ app.use("/api/*", async (c, next) => {
 /**
  * 健康检查端点
  */
-app.get("/", (c) => {
+app.get("/health", (c) => {
   return c.json({
     ok: true,
     service: "vps-stock-monitor",
@@ -553,9 +553,9 @@ app.get("/api/history", async (c) => {
 });
 
 /**
- * 挂载 UI 路由
+ * 挂载 UI 路由（根路径）
  */
-app.route("/admin", createUIRoutes());
+app.route("/", createUIRoutes());
 
 /**
  * 404 处理

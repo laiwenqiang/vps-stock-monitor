@@ -749,7 +749,7 @@ const scripts = `
     if (API.isLoggedIn()) {
       authActions.innerHTML = '<button onclick="logout()" class="btn btn-secondary btn-sm">登出</button>';
     } else {
-      authActions.innerHTML = '<a href="/admin/login" class="btn btn-primary btn-sm">登录</a>';
+      authActions.innerHTML = '<a href="/login" class="btn btn-primary btn-sm">登录</a>';
     }
 
     // 更新需要登录的按钮状态
@@ -794,10 +794,10 @@ export function renderLayout(options: LayoutOptions): string {
   const { title, activePage, content, scripts: pageScripts } = options;
 
   const navLinks = [
-    { id: 'dashboard', label: 'Dashboard', href: '/admin' },
-    { id: 'targets', label: '目标管理', href: '/admin/targets' },
-    { id: 'status', label: '状态监控', href: '/admin/status' },
-    { id: 'history', label: '历史记录', href: '/admin/history' },
+    { id: 'dashboard', label: 'Dashboard', href: '/' },
+    { id: 'targets', label: '目标管理', href: '/targets' },
+    { id: 'status', label: '状态监控', href: '/status' },
+    { id: 'history', label: '历史记录', href: '/history' },
   ];
 
   return `<!DOCTYPE html>
@@ -811,7 +811,7 @@ export function renderLayout(options: LayoutOptions): string {
 <body>
   <nav class="nav">
     <div class="container nav-inner">
-      <a href="/admin" class="nav-brand">VPS Monitor</a>
+      <a href="/" class="nav-brand">VPS Monitor</a>
       <ul class="nav-links">
         ${navLinks.map(link => `
           <li>

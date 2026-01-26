@@ -43,10 +43,10 @@ export function renderDashboardPage(): string {
         <button class="btn btn-primary" onclick="checkAll()" id="checkAllBtn" data-requires-auth>
           检查所有目标
         </button>
-        <a href="/admin/targets" class="btn btn-secondary">
+        <a href="/targets" class="btn btn-secondary">
           管理目标
         </a>
-        <a href="/admin/status" class="btn btn-secondary">
+        <a href="/status" class="btn btn-secondary">
           查看状态
         </a>
       </div>
