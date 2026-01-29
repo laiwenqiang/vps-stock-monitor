@@ -8,9 +8,95 @@ import { renderLayout } from './layout.js';
  * 渲染 Dashboard 页面
  */
 export function renderDashboardPage(): string {
+  const stageStyles = `
+    .stage-container {
+      width: 100%; height: 120px;
+      background: linear-gradient(180deg, #13141c 0%, #1a1b26 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: relative; overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .web { position: absolute; pointer-events: none; opacity: 0.15; background-repeat: no-repeat; background-size: contain; }
+    :root { --web-svg: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L100 100 M0 0 L50 100 M0 0 L100 50 M0 0 L100 0 M0 0 L0 100' stroke='white' stroke-width='1' fill='none'/%3E%3Cpath d='M10 0 Q10 10 0 10 M20 0 Q20 20 0 20 M35 0 Q35 35 0 35 M55 0 Q55 55 0 55 M80 0 Q80 80 0 80' stroke='white' stroke-width='0.5' fill='none'/%3E%3C/svg%3E"); }
+    .web-1 { top: 0; left: 0; width: 120px; height: 120px; background-image: var(--web-svg); }
+    .web-2 { top: 0; right: 0; width: 80px; height: 80px; background-image: var(--web-svg); transform: scaleX(-1); opacity: 0.1; }
+    .firefly {
+      width: 8px; height: 8px;
+      background: #e0af68; border-radius: 50%;
+      position: absolute; bottom: 40px; left: 80%;
+      box-shadow: 0 0 4px #e0af68, 0 0 12px rgba(224, 175, 104, 0.6);
+      z-index: 2;
+    }
+    .firefly-glow {
+      width: 100%; height: 100%; border-radius: 50%; background: inherit;
+      animation: flicker 3s infinite ease-in-out;
+    }
+    @keyframes flicker { 0%, 100% { opacity: 0.4; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+    .susu-wrapper {
+      position: absolute; bottom: 15px; left: 10%;
+      width: 32px; height: 32px; z-index: 1;
+      transition: transform 0.3s ease-out;
+    }
+    .susuwatari {
+      width: 100%; height: 100%;
+      background: #0f0f14; border-radius: 50%; position: relative;
+      box-shadow: 0 0 8px rgba(0,0,0,0.8);
+      transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .eye {
+      width: 10px; height: 10px; background: #fff; border-radius: 50%;
+      position: absolute; top: 6px; overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .eye.left { left: 4px; } .eye.right { right: 4px; }
+    .pupil { width: 3px; height: 3px; background: #000; border-radius: 50%; position: absolute; top: 3px; left: 3px; }
+    .eye::before, .eye::after {
+      content: ''; position: absolute; left: 0; width: 100%; height: 50%;
+      background: #0f0f14;
+      transition: transform 0.4s ease-in-out;
+      z-index: 2;
+    }
+    .eye::before { top: 0; transform: translateY(-100%); }
+    .eye::after { bottom: 0; transform: translateY(100%); }
+    .sweat-drop {
+      position: absolute; width: 4px; height: 6px; background: #7aa2f7; border-radius: 50%;
+      opacity: 0; top: 5px; pointer-events: none;
+    }
+    .sweat-drop.s1 { left: -2px; } .sweat-drop.s2 { right: -2px; animation-delay: 0.3s; }
+    .walking .susuwatari { animation: walk-bounce 0.3s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5); }
+    .walking .sweat-drop { animation: sweating 0.6s infinite ease-out; }
+    .resting .susuwatari {
+      transform: translateY(3px);
+      animation: breathing 1.5s infinite ease-in-out;
+    }
+    .resting .eye::before { transform: translateY(0); }
+    .resting .eye::after { transform: translateY(0); }
+    .resting .sweat-drop { opacity: 0; animation: none; }
+    @keyframes sweating { 0% { opacity: 0.8; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-15px) scale(0.5); } }
+    @keyframes walk-bounce { 0% { transform: translateY(0) scaleX(1); } 100% { transform: translateY(-4px) scaleX(0.95); } }
+    @keyframes breathing { 0%, 100% { transform: translateY(3px) scale(1); } 50% { transform: translateY(1px) scale(1.05, 0.95); } }
+  `;
+
+  const stageHtml = `
+    <div class="stage-container" id="stage">
+      <div class="web web-1"></div><div class="web web-2"></div>
+      <div class="firefly" id="firefly"><div class="firefly-glow"></div></div>
+      <div class="susu-wrapper" id="susu">
+        <div class="sweat-drop s1"></div><div class="sweat-drop s2"></div>
+        <div class="susuwatari">
+          <div class="eye left"><div class="pupil"></div></div>
+          <div class="eye right"><div class="pupil"></div></div>
+        </div>
+      </div>
+    </div>
+  `;
+
   const content = `
+    <style>${stageStyles}</style>
+    ${stageHtml}
+
     <div class="page-header">
-      <h1 class="page-title">Dashboard</h1>
+      <h1 class="page-title">Stock Monitor</h1>
       <p class="page-subtitle">VPS 库存监控系统概览</p>
     </div>
 
@@ -188,6 +274,91 @@ export function renderDashboardPage(): string {
       loadStats();
       loadRecentStatus();
     });
+
+    // 舞台动画 (IIFE 隔离作用域)
+    (function() {
+      const firefly = document.getElementById('firefly');
+      const susuWrapper = document.getElementById('susu');
+      const stage = document.getElementById('stage');
+      if (!firefly || !susuWrapper || !stage) return;
+
+      const state = {
+        susuX: 10, susuSpeed: 0, isResting: false, facingRight: true,
+        targetX: 80, targetY: 50, fireflyX: 80, fireflyY: 50, time: 0
+      };
+      const CONFIG = {
+        susuMaxSpeed: 0.18, susuAccel: 0.008, friction: 0.94,
+        panicDistance: 15, flySpeed: 0.08,
+        restThreshold: 500, restDuration: 150
+      };
+      let fatigueCounter = 0, restTimer = 0, animationId = null, isPaused = false;
+
+      function flee() {
+        let newX = Math.random() * 80 + 10;
+        if (state.susuX < 50) newX = 60 + Math.random() * 35;
+        else newX = 5 + Math.random() * 35;
+        state.targetX = newX;
+        state.targetY = 30 + Math.random() * 50;
+      }
+
+      function loop() {
+        if (isPaused) return;
+        state.time += 0.05;
+        const distX = state.fireflyX - state.susuX;
+        if (Math.abs(distX) < CONFIG.panicDistance && !state.isResting) flee();
+        state.fireflyX += (state.targetX - state.fireflyX) * CONFIG.flySpeed;
+        state.fireflyY += (state.targetY - state.fireflyY) * CONFIG.flySpeed;
+        const hoverY = Math.sin(state.time) * 6;
+        const hoverX = Math.cos(state.time * 1.5) * 3;
+        firefly.style.left = (state.fireflyX + hoverX) + '%';
+        firefly.style.bottom = (state.fireflyY + hoverY) + 'px';
+
+        if (state.isResting) {
+          susuWrapper.classList.remove('walking');
+          susuWrapper.classList.add('resting');
+          state.susuSpeed = 0;
+          restTimer++;
+          if (restTimer > CONFIG.restDuration) {
+            state.isResting = false; restTimer = 0; fatigueCounter = 0;
+          }
+        } else {
+          susuWrapper.classList.remove('resting');
+          if (Math.abs(distX) > 2) {
+            susuWrapper.classList.add('walking');
+            state.susuSpeed += distX > 0 ? CONFIG.susuAccel : -CONFIG.susuAccel;
+          } else {
+            susuWrapper.classList.remove('walking');
+            state.susuSpeed *= 0.7;
+          }
+          state.susuSpeed = Math.max(Math.min(state.susuSpeed, CONFIG.susuMaxSpeed), -CONFIG.susuMaxSpeed);
+          state.susuSpeed *= CONFIG.friction;
+          state.susuX += state.susuSpeed;
+          if (state.susuX < 2) { state.susuX = 2; state.susuSpeed *= -0.5; }
+          if (state.susuX > 98) { state.susuX = 98; state.susuSpeed *= -0.5; }
+          if (state.susuSpeed > 0.02 && !state.facingRight) {
+            state.facingRight = true; susuWrapper.style.transform = 'scaleX(1)';
+          } else if (state.susuSpeed < -0.02 && state.facingRight) {
+            state.facingRight = false; susuWrapper.style.transform = 'scaleX(-1)';
+          }
+          susuWrapper.style.left = state.susuX + '%';
+          if (Math.abs(state.susuSpeed) > 0.05) {
+            fatigueCounter++;
+            if (fatigueCounter > CONFIG.restThreshold && Math.random() < 0.02) state.isResting = true;
+          }
+        }
+        animationId = requestAnimationFrame(loop);
+      }
+
+      function startLoop() { if (!isPaused && !animationId) animationId = requestAnimationFrame(loop); }
+      function stopLoop() { if (animationId) { cancelAnimationFrame(animationId); animationId = null; } }
+
+      document.addEventListener('visibilitychange', () => {
+        isPaused = document.hidden;
+        if (isPaused) stopLoop(); else startLoop();
+      });
+      stage.addEventListener('click', () => { if (state.isResting) { state.isResting = false; restTimer = 0; } flee(); });
+      startLoop();
+    })();
   `;
 
   return renderLayout({

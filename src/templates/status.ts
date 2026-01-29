@@ -2,13 +2,114 @@
  * 状态监控页面模板
  */
 
-import { renderLayout } from './layout.js';
+import { renderLayout, icons } from './layout.js';
 
 /**
  * 渲染状态监控页面
  */
 export function renderStatusPage(): string {
+  const cardStyles = `
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+    @media (max-width: 1024px) {
+      .status-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .status-grid { grid-template-columns: 1fr; }
+    }
+    .server-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.2s ease;
+    }
+    .server-card:hover {
+      transform: translateY(-2px);
+      border-color: #414868;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .srv-name {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .srv-flag {
+      background: rgba(255,255,255,0.05);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .srv-meta {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+    .card-bot {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .price {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+    .stock-badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .stock-badge.ok {
+      background: rgba(158,206,106,0.15);
+      color: var(--success);
+    }
+    .stock-badge.no {
+      background: rgba(247,118,142,0.15);
+      color: var(--error);
+    }
+    .stock-badge.warn {
+      background: rgba(224,175,104,0.15);
+      color: var(--warning);
+    }
+    .stock-badge.muted {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+    }
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .card-actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .empty-grid {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+  `;
+
   const content = `
+    <style>${cardStyles}</style>
+
     <div class="page-header flex justify-between items-center">
       <div>
         <h1 class="page-title">状态监控</h1>
@@ -46,27 +147,11 @@ export function renderStatusPage(): string {
       </div>
     </div>
 
-    <!-- 状态列表 -->
-    <div class="card">
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>目标</th>
-              <th>Provider</th>
-              <th>库存状态</th>
-              <th>价格</th>
-              <th>最后检查</th>
-              <th>错误</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="statusTable">
-            <tr>
-              <td colspan="7" class="text-center text-muted">加载中...</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- 状态卡片网格 -->
+    <div class="status-grid" id="statusGrid">
+      <div class="empty-grid">
+        <span class="spinner"></span>
+        <p class="mt-2">加载中...</p>
       </div>
     </div>
 
@@ -78,7 +163,6 @@ export function renderStatusPage(): string {
           <button class="modal-close" onclick="Modal.hide('detailModal')">&times;</button>
         </div>
         <div class="modal-body" id="detailContent">
-          <!-- 动态内容 -->
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="Modal.hide('detailModal')">关闭</button>
@@ -91,9 +175,8 @@ export function renderStatusPage(): string {
     let statusData = [];
     let filteredData = [];
 
-    // 加载状态数据
     async function loadStatus() {
-      const tbody = document.getElementById('statusTable');
+      const grid = document.getElementById('statusGrid');
       const refreshBtn = document.getElementById('refreshBtn');
 
       refreshBtn.disabled = true;
@@ -102,15 +185,11 @@ export function renderStatusPage(): string {
       try {
         const result = await API.get('/status');
         statusData = result.data || [];
-
-        // 更新 Provider 筛选器
         updateProviderFilter();
-
-        // 应用筛选
         applyFilter();
       } catch (error) {
         console.error('Failed to load status:', error);
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-error">加载失败</td></tr>';
+        grid.innerHTML = '<div class="empty-grid text-error">加载失败</div>';
         Toast.error('加载状态失败');
       } finally {
         refreshBtn.disabled = false;
@@ -118,21 +197,15 @@ export function renderStatusPage(): string {
       }
     }
 
-    // 更新 Provider 筛选器选项
     function updateProviderFilter() {
       const select = document.getElementById('filterProvider');
       const providers = [...new Set(statusData.map(d => d.target.provider))];
-
       const currentValue = select.value;
       select.innerHTML = '<option value="all">全部</option>' +
         providers.map(p => \`<option value="\${p}">\${p}</option>\`).join('');
-
-      if (providers.includes(currentValue)) {
-        select.value = currentValue;
-      }
+      if (providers.includes(currentValue)) select.value = currentValue;
     }
 
-    // 应用筛选
     function applyFilter() {
       const statusFilter = document.getElementById('filterStatus').value;
       const providerFilter = document.getElementById('filterProvider').value;
@@ -142,87 +215,82 @@ export function renderStatusPage(): string {
         const state = item.state;
         const status = state?.lastStatus;
 
-        // Provider 筛选
-        if (providerFilter !== 'all' && target.provider !== providerFilter) {
-          return false;
-        }
-
-        // 状态筛选
+        if (providerFilter !== 'all' && target.provider !== providerFilter) return false;
         if (statusFilter !== 'all') {
           if (statusFilter === 'in_stock' && !status?.inStock) return false;
           if (statusFilter === 'out_of_stock' && (status?.inStock || !status)) return false;
           if (statusFilter === 'error' && !state?.errorCount) return false;
           if (statusFilter === 'unchecked' && state?.lastCheckedAt) return false;
         }
-
         return true;
       });
 
-      renderTable();
+      renderCards();
     }
 
-    // 渲染表格
-    function renderTable() {
-      const tbody = document.getElementById('statusTable');
+    function renderCards() {
+      const grid = document.getElementById('statusGrid');
 
-      if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">无匹配数据</td></tr>';
+      if (statusData.length === 0) {
+        grid.innerHTML = \`
+          <div class="empty-grid">
+            <p>暂无监控目标</p>
+            <a href="/targets" class="btn btn-primary mt-4">添加目标</a>
+          </div>
+        \`;
         return;
       }
 
-      tbody.innerHTML = filteredData.map(item => {
+      if (filteredData.length === 0) {
+        grid.innerHTML = '<div class="empty-grid">无匹配数据</div>';
+        return;
+      }
+
+      grid.innerHTML = filteredData.map(item => {
         const target = item.target;
         const state = item.state;
         const status = state?.lastStatus;
 
-        // 库存状态
-        let stockBadge = '<span class="badge badge-muted">未检查</span>';
+        let stockBadge = '<span class="stock-badge muted">未检查</span>';
+        let stockClass = 'muted';
         if (state?.errorCount > 0) {
-          stockBadge = '<span class="badge badge-error">错误</span>';
+          stockBadge = '<span class="stock-badge no">错误</span>';
+          stockClass = 'no';
         } else if (status) {
           if (status.inStock) {
             const qtyText = status.qty !== undefined ? \` (\${status.qty})\` : '';
-            stockBadge = \`<span class="badge badge-success">有货\${qtyText}</span>\`;
+            stockBadge = \`<span class="stock-badge ok">有货\${qtyText}</span>\`;
+            stockClass = 'ok';
           } else {
-            stockBadge = '<span class="badge badge-warning">无货</span>';
+            stockBadge = '<span class="stock-badge warn">无货</span>';
+            stockClass = 'warn';
           }
         }
 
-        // 价格
-        const priceText = status?.price !== undefined ? \`$\${status.price}\` : '-';
-
-        // 错误信息
-        let errorText = '-';
-        if (state?.errorCount > 0) {
-          errorText = \`<span class="text-error" title="\${state.lastError || ''}">\${state.errorCount} 次</span>\`;
-        }
-
+        const priceText = status?.price !== undefined ? '$' + status.price : '-';
         const displayName = target.name || target.url;
+        const regionTag = target.region ? \`<span class="srv-flag">\${target.region.toUpperCase()}</span>\` : '';
+        const configInfo = target.plan || target.provider;
 
         return \`
-          <tr>
-            <td>
-              <div class="truncate" style="max-width: 200px;" title="\${target.url}">
-                \${displayName}
-              </div>
-              \${target.region ? \`<div class="text-xs text-muted">\${target.region}</div>\` : ''}
-            </td>
-            <td>\${target.provider}</td>
-            <td>\${stockBadge}</td>
-            <td>\${priceText}</td>
-            <td class="text-muted text-sm">\${Format.relativeTime(state?.lastCheckedAt)}</td>
-            <td>\${errorText}</td>
-            <td>
-              <div class="flex gap-1">
-                <button class="btn btn-secondary btn-sm" onclick="checkSingle('\${target.id}')" title="检查">
-                  🔍
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="showDetail('\${target.id}')" title="详情">
-                  📋
-                </button>
-              </div>
-            </td>
-          </tr>
+          <div class="server-card">
+            <div class="card-top">
+              <span class="srv-name" title="\${target.url}">\${displayName}</span>
+              \${regionTag}
+            </div>
+            <div class="srv-meta">
+              <div>\${target.provider}</div>
+              <div>\${configInfo}</div>
+            </div>
+            <div class="card-bot">
+              <span class="price">\${priceText}</span>
+              \${stockBadge}
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary btn-sm" onclick="checkSingle('\${target.id}')">检查</button>
+              <button class="btn btn-secondary btn-sm" onclick="showDetail('\${target.id}')">详情</button>
+            </div>
+          </div>
         \`;
       }).join('');
     }

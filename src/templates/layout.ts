@@ -11,6 +11,24 @@ export interface LayoutOptions {
 }
 
 /**
+ * SVG 图标集合
+ */
+export const icons = {
+  search: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  edit: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  delete: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+  copy: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  plus: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+  check: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  x: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  refresh: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
+  settings: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  logout: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>',
+  info: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+  empty: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>',
+}
+
+/**
  * 通用样式
  */
 const styles = `
@@ -21,18 +39,19 @@ const styles = `
   }
 
   :root {
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --error: #ef4444;
-    --bg: #f8fafc;
-    --bg-card: #ffffff;
-    --text: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --shadow: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+    --primary: #7aa2f7;
+    --primary-dark: #5d7ec7;
+    --success: #9ece6a;
+    --warning: #e0af68;
+    --error: #f7768e;
+    --bg: #1a1b26;
+    --bg-card: #24283b;
+    --text: #c0caf5;
+    --text-muted: #565f89;
+    --border: rgba(255,255,255,0.06);
+    --shadow: none;
+    --shadow-hover: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.4);
   }
 
   body {
@@ -85,17 +104,28 @@ const styles = `
     text-decoration: none;
     border-radius: 0.375rem;
     font-size: 0.875rem;
-    transition: all 0.15s;
+    transition: all 0.2s ease;
+    position: relative;
   }
 
   .nav-link:hover {
-    background: var(--bg);
     color: var(--text);
   }
 
   .nav-link.active {
+    color: var(--primary);
+    font-weight: 500;
+  }
+
+  .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -0.75rem;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
     background: var(--primary);
-    color: white;
+    border-radius: 1px;
   }
 
   .nav-actions {
@@ -106,11 +136,11 @@ const styles = `
 
   /* Main content */
   .main {
-    padding: 1.5rem 0;
+    padding: 2rem 0;
   }
 
   .page-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .page-title {
@@ -129,8 +159,12 @@ const styles = `
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 0.5rem;
-    padding: 1.25rem;
-    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-hover);
   }
 
   .card-header {
@@ -149,16 +183,20 @@ const styles = `
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 0.5rem;
-    padding: 1.25rem;
-    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .stat-card:hover {
+    box-shadow: var(--shadow-hover);
   }
 
   .stat-label {
@@ -190,7 +228,7 @@ const styles = `
     border-radius: 0.375rem;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s ease;
     text-decoration: none;
   }
 
@@ -256,13 +294,13 @@ const styles = `
     border: 1px solid var(--border);
     border-radius: 0.375rem;
     background: var(--bg-card);
-    transition: border-color 0.15s;
+    transition: all 0.2s ease;
   }
 
   .form-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
   }
 
   .form-select {
@@ -273,6 +311,13 @@ const styles = `
     border-radius: 0.375rem;
     background: var(--bg-card);
     cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
   }
 
   .form-checkbox {
@@ -300,7 +345,7 @@ const styles = `
 
   .table th,
   .table td {
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
     text-align: left;
     border-bottom: 1px solid var(--border);
   }
@@ -314,8 +359,12 @@ const styles = `
     background: var(--bg);
   }
 
-  .table tr:hover {
-    background: var(--bg);
+  .table tr {
+    transition: background 0.15s ease;
+  }
+
+  .table tbody tr:hover {
+    background: rgba(255,255,255,0.03);
   }
 
   /* Status badges */
@@ -329,22 +378,22 @@ const styles = `
   }
 
   .badge-success {
-    background: #dcfce7;
-    color: #166534;
+    background: rgba(158,206,106,0.15);
+    color: var(--success);
   }
 
   .badge-warning {
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(224,175,104,0.15);
+    color: var(--warning);
   }
 
   .badge-error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(247,118,142,0.15);
+    color: var(--error);
   }
 
   .badge-muted {
-    background: var(--bg);
+    background: rgba(255,255,255,0.05);
     color: var(--text-muted);
   }
 
@@ -353,7 +402,7 @@ const styles = `
     position: relative;
     width: 2.5rem;
     height: 1.25rem;
-    background: var(--border);
+    background: rgba(255,255,255,0.1);
     border-radius: 9999px;
     cursor: pointer;
     transition: background 0.2s;
@@ -370,10 +419,10 @@ const styles = `
     left: 2px;
     width: 1rem;
     height: 1rem;
-    background: white;
+    background: #c0caf5;
     border-radius: 50%;
     transition: transform 0.2s;
-    box-shadow: var(--shadow);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
 
   .toggle.active::after {
@@ -384,14 +433,14 @@ const styles = `
   .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
   }
 
   .modal-overlay.active {
@@ -407,12 +456,12 @@ const styles = `
     max-height: 90vh;
     overflow-y: auto;
     margin: 1rem;
-    transform: scale(0.95);
-    transition: transform 0.2s;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.2s ease;
   }
 
   .modal-overlay.active .modal {
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 
   .modal-header {
@@ -471,6 +520,7 @@ const styles = `
     gap: 0.5rem;
     animation: slideIn 0.2s ease-out;
     max-width: 350px;
+    transition: all 0.2s ease;
   }
 
   .toast.success {
@@ -513,7 +563,7 @@ const styles = `
   .loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(26, 27, 38, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;

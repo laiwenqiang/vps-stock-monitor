@@ -2,7 +2,7 @@
  * 目标管理页面模板
  */
 
-import { renderLayout } from './layout.js';
+import { renderLayout, icons } from './layout.js';
 
 /**
  * 渲染目标管理页面
@@ -194,7 +194,7 @@ export function renderTargetsPage(): string {
           tbody.innerHTML = \`
             <tr>
               <td colspan="6" class="empty-state">
-                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-icon">${icons.empty}</div>
                 <p>暂无监控目标</p>
                 <button class="btn btn-primary mt-4" onclick="showCreateModal()">添加第一个目标</button>
               </td>
@@ -235,13 +235,13 @@ export function renderTargetsPage(): string {
               <td>
                 <div class="flex gap-1">
                   <button class="btn btn-secondary btn-sm" onclick="checkTarget('\${target.id}')" title="检查">
-                    🔍
+                    ${icons.search}
                   </button>
                   <button class="btn btn-secondary btn-sm" onclick="editTarget('\${target.id}')" title="编辑">
-                    ✏️
+                    ${icons.edit}
                   </button>
                   <button class="btn btn-secondary btn-sm" onclick="showDeleteModal('\${target.id}')" title="删除">
-                    🗑️
+                    ${icons.delete}
                   </button>
                 </div>
               </td>
